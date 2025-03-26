@@ -69,36 +69,11 @@ interface=wlan0
 dhcp-range=192.168.4.10,192.168.4.100,255.255.255.0,24h
 ```
 
-# 🔄 Script Bash de démarrage en AP
+# 🔄 Script Bash de démarrage en AP (explications)
 ## 📄 scripts/start_ap.sh
 - Configure IP statique
 - Démarre hostapd + dnsmasq
 
-```bash
-#!/bin/bash
-
-echo "[🔁] Activation du mode Point d'Accès..."
-
-# Désactiver les services réseau gérés automatiquement
-sudo systemctl stop NetworkManager
-sudo systemctl stop wpa_supplicant
-
-# Définir une IP statique sur wlan0
-sudo ip link set wlan0 down
-sudo ip addr flush dev wlan0
-sudo ip addr add 192.168.4.1/24 dev wlan0
-sudo ip link set wlan0 up
-
-# Démarrer dnsmasq (DHCP + DNS)
-sudo systemctl restart dnsmasq
-
-# Démarrer hostapd (point d'accès)
-sudo systemctl unmask hostapd
-sudo systemctl enable hostapd
-sudo systemctl restart hostapd
-
-echo "[✅] Mode AP actif : SSID = raspi-setup | IP = 192.168.4.1"
-```
 **Ne pas oublier de faire ceci sur le fichier pour le rendre executable**
 ```bash
 chmod +x scripts/start_ap.sh
@@ -107,22 +82,6 @@ chmod +x scripts/start_ap.sh
 ## 📄 scripts/stop_ap.sh
 - Stoppe le mode AP
 - Relance les services normaux (NetworkManager, etc.)
-
-```bash
-#!/bin/bash
-
-echo "[🔁] Retour au mode client Wi-Fi..."
-
-# Arrêter AP
-sudo systemctl stop hostapd
-sudo systemctl stop dnsmasq
-
-# Réactiver services normaux
-sudo systemctl start NetworkManager
-sudo systemctl start wpa_supplicant
-
-echo "[✅] Mode client réactivé"
-```
 
 # 📂 Structure du projet "rasp-ap"
 ```php

@@ -94,9 +94,18 @@ WantedBy=multi-user.target
 ### 5. Activer le service
 
 ```bash
+# Recharger systemd
+sudo systemctl daemon-reexec
 sudo systemctl daemon-reload
+
+# Activer au démarrage
 sudo systemctl enable rasp-ap
+
+# Lancer maintenant pour tester
 sudo systemctl start rasp-ap
+
+# Vérifier les logs
+sudo journalctl -u rasp-ap -f
 ```
 
 

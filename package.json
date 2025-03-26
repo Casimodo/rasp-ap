@@ -1,0 +1,16 @@
+{
+  "name": "rasp-ap",
+  "version": "1.0.0",
+  "description": "Connexion Wi-Fi automatique + fallback AP pour Raspberry Pi",
+  "main": "index.js",
+  "scripts": {
+    "start": "sudo node index.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "body-parser": "^1.20.3",
+    "ejs": "^3.1.10",
+    "express": "^4.21.2"
+  }
+}

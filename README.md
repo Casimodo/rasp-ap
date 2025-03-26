@@ -24,38 +24,25 @@ Créer un système Node.js sur Raspberry Pi qui :
 6. ⚙️ Démarre automatiquement grâce à un service systemd.
 
 
-# 📂 Structure du projet "rasp-ap"
-```php
-rasp-ap/
-├── index.js                  # Script principal
-├── wifi.js                   # Connexion Wi-Fi & scan
-├── ap.js                     # Serveur AP & Web
-├── config.json               # Fichier de config Wi-Fi
-├── scripts/
-│   ├── start_ap.sh           # Active le mode AP
-│   └── stop_ap.sh            # Réactive le mode Wi-Fi client
-├── web/
-│   └── index.ejs             # Interface HTML avec liste des SSID
-├── public/
-│   ├── script.js             # Masquer / afficher le mot de passe
-│   └── style.css             # (optionnel)
-├── package.json
-└── rasp-ap.service           # Fichier systemd à copier
-
-```
-
 # Installation système
 
-## ⚙️ Pré-requis
+## 📦 Pré-requis (Packages à installer)
 
 ```bash
 sudo apt install -y network-manager hostapd dnsmasq
 sudo systemctl stop hostapd
 sudo systemctl stop dnsmasq
+npm install express ejs body-parser
 ```
 
+### ⚙️ Détail de la partie NodeJS des dépendances:
+
+- ``express``	Serveur web léger (serve les pages et gère les routes HTTP)
+- ``ejs``	Moteur de template pour générer dynamiquement les pages HTML (index.ejs)
+- ``body-parser``	Permet de lire les données des formulaires POST (comme le SSID/mot de passe)
+
 ## 🔧 Fichiers de config nécessaires
-==/etc/hostapd/hostapd.conf==
+`` /etc/hostapd/hostapd.conf ``
 
 ```ini
 interface=wlan0
@@ -69,13 +56,13 @@ wpa_key_mgmt=WPA-PSK
 rsn_pairwise=CCMP
 ```
 
-==/etc/default/hostapd==
+``/etc/default/hostapd ``
 
 ```ini
 DAEMON_CONF="/etc/hostapd/hostapd.conf"
 ```
 
-==/etc/dnsmasq.conf==
+``/etc/dnsmasq.conf ``
 
 ```ini
 interface=wlan0
@@ -137,190 +124,27 @@ sudo systemctl start wpa_supplicant
 echo "[✅] Mode client réactivé"
 ```
 
-# 🖥️ Interface Web (mode AP)
+# 📂 Structure du projet "rasp-ap"
+```php
+rasp-ap/
+├── index.js                  # Script principal
+├── wifi.js                   # Connexion Wi-Fi & scan
+├── ap.js                     # Serveur AP & Web
+├── config.json               # Fichier de config Wi-Fi
+├── scripts/
+│   ├── start_ap.sh           # Active le mode AP
+│   └── stop_ap.sh            # Réactive le mode Wi-Fi client
+├── web/
+│   └── index.ejs             # Interface HTML avec liste des SSID
+├── public/
+│   ├── script.js             # Masquer / afficher le mot de passe
+│   └── style.css             # (optionnel)
+├── package.json
+└── rasp-ap.service           # Fichier systemd à copier
 
-## 📁 ap.js — Gestion du mode AP et du serveur web
-```js
-const express = require('express');
-const bodyParser = require('body-parser');
-const wifi = require('./wifi');
-const fs = require('fs');
-const path = require('path');
-
-function startAccessPoint() {
-  return new Promise((resolve) => {
-    const app = express();
-
-    app.set('view engine', 'ejs');
-    app.use(bodyParser.urlencoded({ extended: true }));
-    app.use(express.static(path.join(__dirname, 'public')));
-
-    app.get('/', async (req, res) => {
-      try {
-        const networks = await wifi.scanNetworks();
-        res.render(path.join(__dirname, 'web/index.ejs'), { networks });
-      } catch (err) {
-        res.status(500).send("Erreur lors du scan Wi-Fi");
-      }
-    });
-
-    app.post('/connect', (req, res) => {
-      const { ssid, password } = req.body;
-      if (!ssid || !password) {
-        return res.status(400).send("Champs requis manquants.");
-      }
-
-      const config = {
-        ssid,
-        password
-      };
-
-      fs.writeFileSync('./config.json', JSON.stringify(config, null, 2));
-      res.send("<h2>✅ Enregistré. Redémarrage dans 3 secondes...</h2><script>setTimeout(()=>{location.reload()}, 3000);</script>");
-
-      setTimeout(() => process.exit(0), 3000);
-    });
-
-    app.listen(80, () => {
-      console.log("🌐 Serveur AP lancé sur http://192.168.4.1");
-      resolve();
-    });
-  });
-}
-
-function startHelloServer() {
-  const app = express();
-
-  app.get('/', (req, res) => {
-    const { exec } = require('child_process');
-    exec('nmcli -t -f ACTIVE,SSID dev wifi', (err, stdout) => {
-      if (err) return res.send("Erreur réseau");
-      const ssidLine = stdout.split('\n').find(l => l.startsWith('yes:'));
-      const ssid = ssidLine ? ssidLine.split(':')[1] : 'Inconnu';
-      res.send(`<h1>✅ Connecté à ${ssid}</h1><p>Hello World !</p>`);
-    });
-  });
-
-  app.listen(80, () => {
-    console.log("🌐 Serveur Wi-Fi client lancé sur le port 80");
-  });
-}
-
-module.exports = { startAccessPoint, startHelloServer };
 ```
 
-## 📁 wifi.js — Scan des réseaux et connexion
-
-```js
-const { exec } = require('child_process');
-const fs = require('fs');
-
-const CONFIG_FILE = './config.json';
-
-function scanNetworks() {
-  return new Promise((resolve, reject) => {
-    exec('nmcli -t -f SSID,SIGNAL dev wifi', (err, stdout) => {
-      if (err) return reject(err);
-      const lines = stdout.split('\n').filter(Boolean);
-      const networks = lines.map(line => {
-        const [ssid, signal] = line.split(':');
-        return { ssid, signal: parseInt(signal) || 0 };
-      });
-      resolve(networks.filter(n => n.ssid)); // enlever les vides
-    });
-  });
-}
-
-function connectToConfiguredWifi() {
-  if (!fs.existsSync(CONFIG_FILE)) return Promise.resolve(false);
-
-  const { ssid, password } = JSON.parse(fs.readFileSync(CONFIG_FILE));
-  return new Promise((resolve) => {
-    exec(`nmcli dev wifi connect "${ssid}" password "${password}"`, (err) => {
-      if (err) {
-        console.log("❌ Connexion échouée à", ssid);
-        return resolve(false);
-      }
-      console.log("✅ Connecté à", ssid);
-      resolve(true);
-    });
-  });
-}
-
-module.exports = { scanNetworks, connectToConfiguredWifi };
-```
-
-## 📁 web/index.ejs — Page Web de configuration
-
-```html
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-  <meta charset="UTF-8">
-  <title>Connexion Wi-Fi</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      max-width: 600px;
-      margin: 2rem auto;
-      padding: 1rem;
-      background: #f4f4f4;
-      border-radius: 10px;
-    }
-    h1 { text-align: center; }
-    form {
-      display: flex;
-      flex-direction: column;
-      gap: 1rem;
-    }
-    input, select, button {
-      padding: 10px;
-      font-size: 1rem;
-    }
-    .password-container {
-      display: flex;
-    }
-    .password-container input {
-      flex: 1;
-    }
-  </style>
-</head>
-<body>
-  <h1>🔧 Configurer le Wi-Fi</h1>
-  <form method="POST" action="/connect">
-    <label>Réseaux détectés :</label>
-    <select name="ssid" required>
-      <% networks.forEach(net => { %>
-        <option value="<%= net.ssid %>">
-          <%= net.ssid %> (Signal : <%= net.signal %>%)
-        </option>
-      <% }) %>
-    </select>
-
-    <label>Mot de passe :</label>
-    <div class="password-container">
-      <input type="password" id="password" name="password" placeholder="Mot de passe" required>
-      <button type="button" onclick="togglePassword()">👁️</button>
-    </div>
-
-    <button type="submit">Se connecter</button>
-  </form>
-
-  <script src="/script.js"></script>
-</body>
-</html>
-```
-
-## 📁 public/script.js — Bouton 👁️ pour mot de passe
-
-```js
-function togglePassword() {
-  const pwd = document.getElementById("password");
-  pwd.type = pwd.type === "password" ? "text" : "password";
-}
-```
-
-# 🔄 let's go !
+# 🖥️ let's go, start !
 Tu peux maintenant :
 
 - Lancer avec sudo node index.js

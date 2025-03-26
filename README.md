@@ -24,6 +24,7 @@ Créer un système Node.js sur Raspberry Pi qui :
 6. ⚙️ Démarre automatiquement grâce à un service systemd.
 
 
+
 # Installation système
 
 ## 📦 Pré-requis (Packages à installer)
@@ -41,8 +42,10 @@ npm install express ejs body-parser
 - ``ejs``	Moteur de template pour générer dynamiquement les pages HTML (index.ejs)
 - ``body-parser``	Permet de lire les données des formulaires POST (comme le SSID/mot de passe)
 
-## 🔧 Fichiers de config nécessaires
-`` /etc/hostapd/hostapd.conf ``
+## 🔧 Fichiers de config nécessaires (à modifier / créer)
+ * Ne pas oublier de sauvegarder avant modification 
+
+### 1. `` /etc/hostapd/hostapd.conf ``
 
 ```ini
 interface=wlan0
@@ -56,32 +59,64 @@ wpa_key_mgmt=WPA-PSK
 rsn_pairwise=CCMP
 ```
 
-``/etc/default/hostapd ``
+### 2. ``/etc/default/hostapd ``
 
 ```ini
 DAEMON_CONF="/etc/hostapd/hostapd.conf"
 ```
 
-``/etc/dnsmasq.conf ``
+### 3. ``/etc/dnsmasq.conf ``
 
 ```ini
 interface=wlan0
 dhcp-range=192.168.4.10,192.168.4.100,255.255.255.0,24h
 ```
 
+### 4. Créer le service systemd (ex : ``/etc/systemd/system/rasp-ap.service``)
+
+```bash
+[Unit]
+Description=Raspberry Pi Wi-Fi Manager
+After=network.target
+
+[Service]
+ExecStart=/usr/bin/node /home/rasp-ap/index.js
+WorkingDirectory=/home/rasp-ap
+Restart=always
+RestartSec=5
+User=root
+Environment=NODE_ENV=production
+
+[Install]
+WantedBy=multi-user.target
+```
+
+### 5. Activer le service
+
+```bash
+sudo systemctl daemon-reload
+sudo systemctl enable rasp-ap
+sudo systemctl start rasp-ap
+```
+
+
+
 # 🔄 Script Bash de démarrage en AP (explications)
+
 ## 📄 scripts/start_ap.sh
 - Configure IP statique
 - Démarre hostapd + dnsmasq
 
 **Ne pas oublier de faire ceci sur le fichier pour le rendre executable**
 ```bash
-chmod +x scripts/start_ap.sh
+chmod +x scripts/*.sh
 ```
 
 ## 📄 scripts/stop_ap.sh
 - Stoppe le mode AP
 - Relance les services normaux (NetworkManager, etc.)
+
+
 
 # 📂 Structure du projet "rasp-ap"
 ```php
@@ -103,16 +138,20 @@ rasp-ap/
 
 ```
 
+
+
 # 🖥️ let's go, start !
+
 Tu peux maintenant :
 
-- Lancer avec sudo node index.js
+- Lancer avec ``sudo node index.js``
 
 - Tester en débranchant le Wi-Fi pour forcer le mode AP
 
 - Naviguer sur http://192.168.4.1 en mode AP
 
 - Ajouter un config.json pour simuler une config automatique
+
 
 
 # ✅ Fonctionnement au redémarrage

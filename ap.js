@@ -4,7 +4,7 @@ const wifi = require('./wifi');
 const fs = require('fs');
 const path = require('path');
 
-function startAccessPoint() {
+function startAccessPoint(networks) {
   return new Promise((resolve) => {
     const app = express();
 
@@ -21,45 +21,15 @@ function startAccessPoint() {
       res.render(path.join(__dirname, 'web/index.ejs'), {});      
     });
     
-
     app.get('/config', async (req, res) => {
       
       try {
         
-        // 🔁 Activer temporairement NetworkManager
-        await new Promise((resolve, reject) => {
-          exec('systemctl start NetworkManager', (error, stdout, stderr) => {
-            if (error) {
-              console.error("❌ Erreur lors du démarrage de NetworkManager :", error.message);
-              return reject(error);
-            }
-            if (stderr) {
-              console.warn("⚠️ STDERR NetworkManager :", stderr);
-            }
-            console.log("✅ NetworkManager démarré avec succès.");
-            resolve();
-          });
-        });
-        
-        // 🔁 Enable temporairement NetworkManager
-        await new Promise((resolve, reject) => {
-          exec('systemctl enable NetworkManager', (error, stdout, stderr) => {
-            if (error) {
-              console.error("❌ Erreur lors du l'activation de NetworkManager :", error.message);
-              return reject(error);
-            }
-            if (stderr) {
-              console.warn("⚠️ STDERR NetworkManager :", stderr);
-            }
-            console.log("✅ NetworkManager activé avec succès.");
-            resolve();
-          });
-        });
+        console.log('✅ SSID '+ JSON.stringify(networks) +' trouvés !');
+        res.render(path.join(__dirname, 'web/wifi_setup.ejs'), { networks : networks });
 
-        const networks = await wifi.scanNetworks();
-        res.render(path.join(__dirname, 'web/index.ejs'), { networks });
-        msgLog = "++";
       } catch (err) {
+        console.error("❌ Erreur lors du config :", err.message);
         res.status(500).send("Erreur lors du scan Wi-Fi<br/>" + "<br/><br/>err:" + JSON.stringify(err));
       }
     });
@@ -82,28 +52,44 @@ function startAccessPoint() {
     });
 
     app.listen(80, () => {
-      console.log("🌐 Serveur AP lancé sur http://192.168.4.1");
+      console.log("🌐 Serveur AP lancé sur http://192.168.4.1 ou http://robot");
       resolve();
     });
   });
 }
 
-function startHelloServer() {
+function startHelloServer(ssid) {
   const app = express();
 
   app.get('/', (req, res) => {
     const { exec } = require('child_process');
-    exec('nmcli -t -f ACTIVE,SSID dev wifi', (err, stdout) => {
+    /*exec('nmcli -t -f ACTIVE,SSID dev wifi', (err, stdout) => {
       if (err) return res.send("Erreur réseau");
       const ssidLine = stdout.split('\n').find(l => l.startsWith('yes:'));
-      const ssid = ssidLine ? ssidLine.split(':')[1] : 'Inconnu';
-      res.send(`<h1>✅ Connecté à ${ssid}</h1><p>Hello World !</p>`);
-    });
+      const ssid = ssidLine ? ssidLine.split(':')[1] : 'Inconnu';*/
+
+      // Récupérer l'adresse IP de wlan0
+      exec("hostname -I", (err, ipstdout) => {
+        const ip = ipstdout?.trim().split(' ').find(ip => ip.startsWith('192.168.') || ip.startsWith('10.') || ip.startsWith('172.'));
+        console.log(`🌐 Serveur lancé sur http://${ip || 'Inconnue'}`);
+        res.send(`
+          <h1>✅ Connecté au réseau : ${ssid}</h1>
+          <p>🧭 Adresse IP locale : <strong>${ip || 'Inconnue'}</strong></p>
+          `);
+        });
+    //});
   });
 
   app.listen(80, () => {
-    console.log("🌐 Serveur Wi-Fi client lancé sur le port 80");
+    
+    const { exec } = require('child_process');
+    exec("hostname -I", (err, ipstdout) => {
+      const ip = ipstdout?.trim().split(' ').find(ip => ip.startsWith('192.168.') || ip.startsWith('10.') || ip.startsWith('172.'));
+      console.log(`🌐 Serveur Wi-Fi client lancé sur le port 80 IP:${ip || 'Inconnue'}`);
+      });
+
   });
+  
 }
 
 module.exports = { startAccessPoint, startHelloServer };

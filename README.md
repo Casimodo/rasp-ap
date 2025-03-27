@@ -189,3 +189,15 @@ Tu peux maintenant :
 - Sur AP : interface web dispo pour (re)configurer.
 
 - Si mot de passe saisi → sauvegarde → redémarrage automatique du script.
+
+# 🖥️ Pour vos tests
+```bash
+# Permet de relancer le service
+sudo systemctl restart rasp-ap
+```
+
+```bash
+# Permet de voir le journal du service et les débugs
+sudo journalctl -u rasp-ap -f
+```
+``Pour réinit le ssid et password il vous suffit d'éffacer le fichier de config.json qui ce créé dans le dossier une fois le ssid choisie et password entrée.``

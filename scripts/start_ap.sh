@@ -20,4 +20,7 @@ sudo systemctl unmask hostapd
 sudo systemctl enable hostapd
 sudo systemctl restart hostapd
 
+sleep 2
+nmcli radio wifi on
+
 echo "[✅] Mode AP actif : SSID = raspi-setup | IP = 192.168.4.1"

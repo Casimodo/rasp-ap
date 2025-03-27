@@ -1,55 +1,125 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Connexion Wi-Fi</title>
   <style>
     body {
       font-family: Arial, sans-serif;
-      max-width: 600px;
-      margin: 2rem auto;
-      padding: 1rem;
       background: #f4f4f4;
-      border-radius: 10px;
+      margin: 0;
+      padding: 1rem;
+      display: flex;
+      justify-content: center;
     }
-    h1 { text-align: center; }
+
+    .container {
+      width: 100%;
+      max-width: 500px;
+      background: white;
+      padding: 1.5rem;
+      border-radius: 12px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.05);
+    }
+
+    h1 {
+      text-align: center;
+      font-size: 1.5rem;
+      margin-bottom: 1rem;
+    }
+
     form {
       display: flex;
       flex-direction: column;
       gap: 1rem;
     }
-    input, select, button {
-      padding: 10px;
-      font-size: 1rem;
+
+    label {
+      font-weight: bold;
     }
+
+    select, input[type="password"], button {
+      padding: 0.75rem;
+      font-size: 1rem;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+    }
+
     .password-container {
       display: flex;
+      align-items: center;
     }
+
     .password-container input {
       flex: 1;
+      margin-right: 0.5rem;
+    }
+
+    .password-container button {
+      padding: 0.75rem;
+      font-size: 1rem;
+      background: #ddd;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    button[type="submit"] {
+      background: #ff6600;
+      color: white;
+      border: none;
+      cursor: pointer;
+      transition: background 0.3s ease;
+    }
+
+    button[type="submit"]:hover {
+      background: #e65c00;
+    }
+
+    @media (max-width: 480px) {
+      .password-container {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .password-container input,
+      .password-container button {
+        width: 100%;
+        margin: 0;
+        margin-bottom: 0.5rem;
+      }
     }
   </style>
 </head>
 <body>
-  <h1>🔧 Configurer le Wi-Fi</h1>
-  <form method="POST" action="/connect">
-    <label>Réseaux détectés :</label>
-    <select name="ssid" required>
-      <% networks.forEach(net => { %>
-        <option value="<%= net.ssid %>">
-          <%= net.ssid %> (Signal : <%= net.signal %>%)
-        </option>
-      <% }) %>
-    </select>
+  <div class="container">
+    <h1>🔧 Configurer le Wi-Fi</h1>
 
-    <label>Mot de passe :</label>
-    <div class="password-container">
-      <input type="password" id="password" name="password" placeholder="Mot de passe" required>
-      <button type="button" onclick="togglePassword()">👁️</button>
-    </div>
+    <% if (networks.length === 0) { %>
+      <p>Aucun réseau Wi-Fi trouvé. Veuillez réessayer.</p>
+    <% } else { %>
+      <form method="POST" action="/connect">
+        <p>Séléectionnez votre wifi et entrez votre mot de passe.</p>
+        <label for="ssid">Réseaux détectés :</label>
+        <select name="ssid" id="ssid" required>
+          <% networks.forEach(net => { %>
+            <option value="<%= net.ssid %>">
+              <%= net.ssid %> (Signal : <%= net.signal %>%)
+            </option>
+          <% }) %>
+        </select>
 
-    <button type="submit">Se connecter</button>
-  </form>
+        <label for="password">Mot de passe :</label>
+        <div class="password-container">
+          <input type="password" id="password" name="password" placeholder="Mot de passe" required />
+          <button type="button" onclick="togglePassword()">👁️</button>
+        </div>
+
+        <button type="submit">Se connecter</button>
+      </form>
+    <% } %>
+  </div>
 
   <script src="/script.js"></script>
 </body>

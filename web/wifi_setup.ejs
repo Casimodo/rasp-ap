@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Connexion Wi-Fi</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 600px;
+      margin: 2rem auto;
+      padding: 1rem;
+      background: #f4f4f4;
+      border-radius: 10px;
+    }
+    h1 { text-align: center; }
+    form {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+    input, select, button {
+      padding: 10px;
+      font-size: 1rem;
+    }
+    .password-container {
+      display: flex;
+    }
+    .password-container input {
+      flex: 1;
+    }
+  </style>
+</head>
+<body>
+  <h1>🔧 Configurer le Wi-Fi</h1>
+  <form method="POST" action="/connect">
+    <label>Réseaux détectés :</label>
+    <select name="ssid" required>
+      <% networks.forEach(net => { %>
+        <option value="<%= net.ssid %>">
+          <%= net.ssid %> (Signal : <%= net.signal %>%)
+        </option>
+      <% }) %>
+    </select>
+
+    <label>Mot de passe :</label>
+    <div class="password-container">
+      <input type="password" id="password" name="password" placeholder="Mot de passe" required>
+      <button type="button" onclick="togglePassword()">👁️</button>
+    </div>
+
+    <button type="submit">Se connecter</button>
+  </form>
+
+  <script src="/script.js"></script>
+</body>
+</html>

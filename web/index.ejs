@@ -1,56 +1,61 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8">
-  <title>Connexion Wi-Fi</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Configuration du Robot</title>
   <style>
     body {
       font-family: Arial, sans-serif;
-      max-width: 600px;
-      margin: 2rem auto;
-      padding: 1rem;
-      background: #f4f4f4;
-      border-radius: 10px;
-    }
-    h1 { text-align: center; }
-    form {
+      background: #f6f8fa;
+      color: #333;
+      margin: 0;
+      padding: 2rem 1rem;
       display: flex;
       flex-direction: column;
-      gap: 1rem;
+      align-items: center;
+      text-align: center;
     }
-    input, select, button {
-      padding: 10px;
-      font-size: 1rem;
+    h1 {
+      font-size: 2em;
+      margin-bottom: 1rem;
     }
-    .password-container {
-      display: flex;
+    p {
+      max-width: 400px;
+      font-size: 1.1em;
+      line-height: 1.6;
     }
-    .password-container input {
-      flex: 1;
+    .button {
+      margin-top: 2rem;
+      padding: 1rem 2rem;
+      font-size: 1.2em;
+      background-color: #ff6600;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+      transition: background 0.3s;
+    }
+    .button:hover {
+      background-color: #e65c00;
     }
   </style>
 </head>
 <body>
-  <h1>🔧 Configurer le Wi-Fi</h1>
-  <form method="POST" action="/connect">
-    <label>Réseaux détectés :</label>
-    <select name="ssid" required>
-      <% networks.forEach(net => { %>
-        <option value="<%= net.ssid %>">
-          <%= net.ssid %> (Signal : <%= net.signal %>%)
-        </option>
-      <% }) %>
-    </select>
-
-    <label>Mot de passe :</label>
-    <div class="password-container">
-      <input type="password" id="password" name="password" placeholder="Mot de passe" required>
-      <button type="button" onclick="togglePassword()">👁️</button>
-    </div>
-
-    <button type="submit">Se connecter</button>
-  </form>
-
-  <script src="/script.js"></script>
+  <h1>Bienvenue sur votre Robot 🟠</h1>
+  <p>
+    Pour configurer le Wi-Fi de votre robot, suivez ces étapes :
+  </p>
+  <p>
+    1️⃣ Cliquez sur le bouton ci-dessous<br>
+    2️⃣ Sélectionnez votre réseau Wi-Fi<br>
+    3️⃣ Entrez le mot de passe associé<br>
+    4️⃣ Le robot se connectera automatiquement
+  </p>
+  <p>
+    Cliquez sur le bouton ci-dessous pour commencer la configuration :
+  </p>
+  <a href="/config"><button class="button">Commencer la configuration</button></a>
 </body>
 </html>

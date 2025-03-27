@@ -12,12 +12,55 @@ function startAccessPoint() {
     app.use(bodyParser.urlencoded({ extended: true }));
     app.use(express.static(path.join(__dirname, 'public')));
 
-    app.get('/', async (req, res) => {
+    app.get('/generate_204', (req, res) => res.status(200).send('<meta http-equiv="refresh" content="0;url=http://robot">'));
+    app.get('/hotspot-detect.html', (req, res) => res.redirect('http://robot'));
+    app.get('/ncsi.txt', (req, res) => res.status(200).send('Microsoft NCSI'));
+    app.get('/redirect', (req, res) => res.redirect('http://robot'));
+
+    app.get('/', (req, res) => {
+      res.render(path.join(__dirname, 'web/index.ejs'), {});      
+    });
+    
+
+    app.get('/config', async (req, res) => {
+      
       try {
+        
+        // 🔁 Activer temporairement NetworkManager
+        await new Promise((resolve, reject) => {
+          exec('systemctl start NetworkManager', (error, stdout, stderr) => {
+            if (error) {
+              console.error("❌ Erreur lors du démarrage de NetworkManager :", error.message);
+              return reject(error);
+            }
+            if (stderr) {
+              console.warn("⚠️ STDERR NetworkManager :", stderr);
+            }
+            console.log("✅ NetworkManager démarré avec succès.");
+            resolve();
+          });
+        });
+        
+        // 🔁 Enable temporairement NetworkManager
+        await new Promise((resolve, reject) => {
+          exec('systemctl enable NetworkManager', (error, stdout, stderr) => {
+            if (error) {
+              console.error("❌ Erreur lors du l'activation de NetworkManager :", error.message);
+              return reject(error);
+            }
+            if (stderr) {
+              console.warn("⚠️ STDERR NetworkManager :", stderr);
+            }
+            console.log("✅ NetworkManager activé avec succès.");
+            resolve();
+          });
+        });
+
         const networks = await wifi.scanNetworks();
         res.render(path.join(__dirname, 'web/index.ejs'), { networks });
+        msgLog = "++";
       } catch (err) {
-        res.status(500).send("Erreur lors du scan Wi-Fi");
+        res.status(500).send("Erreur lors du scan Wi-Fi<br/>" + "<br/><br/>err:" + JSON.stringify(err));
       }
     });
 

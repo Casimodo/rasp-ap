@@ -50,13 +50,11 @@ npm install express ejs body-parser
 ```ini
 interface=wlan0
 driver=nl80211
-ssid=raspi-setup
+ssid=robot
 hw_mode=g
 channel=6
-wpa=2
-wpa_passphrase=motdepasseap
-wpa_key_mgmt=WPA-PSK
-rsn_pairwise=CCMP
+auth_algs=1
+ignore_broadcast_ssid=0
 ```
 
 ### 2. ``/etc/default/hostapd ``
@@ -70,6 +68,12 @@ DAEMON_CONF="/etc/hostapd/hostapd.conf"
 ```ini
 interface=wlan0
 dhcp-range=192.168.4.10,192.168.4.100,255.255.255.0,24h
+
+# Rediriger toutes les requêtes DNS vers l’IP de l’AP (portail captif)
+address=/#/192.168.4.1
+
+# Résolution personnalisée du nom "robot"
+address=/robot/192.168.4.1
 ```
 
 ### 4. Créer le service systemd (ex : ``/etc/systemd/system/rasp-ap.service``)
@@ -91,7 +95,20 @@ Environment=NODE_ENV=production
 WantedBy=multi-user.target
 ```
 
-### 5. Activer le service
+### 5. Active et démarre NetworkManager
+
+```bash
+sudo systemctl unmask NetworkManager
+sudo systemctl enable NetworkManager
+sudo systemctl start NetworkManager
+```
+
+`` Vérifier que la commande ci-dessous renvoi des données ``
+```bash
+nmcli -t -f SSID,SIGNAL dev wifi
+```
+
+### 6. Activer le service
 
 ```bash
 # Recharger systemd
@@ -157,7 +174,7 @@ Tu peux maintenant :
 
 - Tester en débranchant le Wi-Fi pour forcer le mode AP
 
-- Naviguer sur http://192.168.4.1 en mode AP
+- Naviguer sur http://192.168.4.1 ou http://robot en mode AP
 
 - Ajouter un config.json pour simuler une config automatique
 
